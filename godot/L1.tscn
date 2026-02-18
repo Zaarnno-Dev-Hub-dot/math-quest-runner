@@ -1,0 +1,75 @@
+[gd_scene load_steps=10 format=3 uid=&quot;uid://l1&quot;]
+
+[sub_resource type=&quot;RectangleShape2D&quot; id=&quot;1&quot;]
+size = Vector2i(1200, 32)
+
+[sub_resource type=&quot;RectangleShape2D&quot; id=&quot;2&quot;]
+size = Vector2i(200, 20)
+
+[sub_resource type=&quot;CircleShape2D&quot; id=&quot;3&quot;]
+radius = 16.0
+
+[node name=&quot;L1&quot; type=&quot;Node2D&quot;]
+
+[node name=&quot;ColorRect&quot; type=&quot;ColorRect&quot; parent=&quot;.&quot;]
+z_index = -10
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset/top = -200.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.529, 0.808, 0.922, 1) # sky blue
+
+[node name=&quot;Ground&quot; type=&quot;StaticBody2D&quot; parent=&quot;.&quot;]
+position = Vector2(0, 550)
+collision_layer = 1
+collision_mask = 1
+
+[node name=&quot;Sprite2D&quot; type=&quot;Sprite2D&quot; parent=&quot;Ground&quot;]
+texture = preload(&quot;../assets/opp-jungle/opp1_jungle_tiles/environment/tiles/jungle/tile_jungle_ground_brown.png&quot;)
+scale = Vector2(30, 1)
+centered = false
+
+[node name=&quot;CollisionShape2D&quot; type=&quot;CollisionShape2D&quot; parent=&quot;Ground&quot;]
+shape = SubResource(&quot;1&quot;)
+
+[node name=&quot;Platform&quot; type=&quot;StaticBody2D&quot; parent=&quot;.&quot;]
+position = Vector2(400, 400)
+collision_layer = 1
+collision_mask = 1
+
+[node name=&quot;Sprite2D&quot; type=&quot;Sprite2D&quot; parent=&quot;Platform&quot;]
+texture = preload(&quot;../assets/opp-jungle/opp1_jungle_tiles/environment/tiles/jungle/tile_jungle_ground_brown.png&quot;)
+scale = Vector2(10, 1)
+centered = false
+
+[node name=&quot;CollisionShape2D&quot; type=&quot;CollisionShape2D&quot; parent=&quot;Platform&quot;]
+shape = SubResource(&quot;2&quot;)
+
+[node name=&quot;@Player@2&quot; parent=&quot;.&quot; instance=ExtResource(&quot;player_tscn&quot;)]
+position = Vector2(100, 450)
+
+[node name=&quot;Gremlin&quot; type=&quot;CharacterBody2D&quot; parent=&quot;.&quot;]
+position = Vector2(600, 450)
+collision_layer = 2
+collision_mask = 1
+
+[node name=&quot;Sprite2D&quot; type=&quot;Sprite2D&quot; parent=&quot;Gremlin&quot;]
+texture = preload(&quot;../kenney_platformer/PNG/Enemies/bee_move.png&quot;)
+centered = false
+
+[node name=&quot;CollisionShape2D&quot; type=&quot;CollisionShape2D&quot; parent=&quot;Gremlin&quot;]
+position = Vector2(16, 16)
+shape = SubResource(&quot;RectangleShape2D_abc&quot;) # reuse
+
+[node name=&quot;Coin&quot; type=&quot;Area2D&quot; parent=&quot;.&quot;]
+position = Vector2(900, 450)
+collision_layer = 4
+collision_mask = 1
+
+[node name=&quot;Sprite2D&quot; type=&quot;Sprite2D&quot; parent=&quot;Coin&quot;]
+texture = preload(&quot;../kenney_platformer/PNG/Items/coinGold.png&quot;)
+
+[node name=&quot;CollisionShape2D&quot; type=&quot;CollisionShape2D&quot; parent=&quot;Coin&quot;]
+shape = SubResource(&quot;3&quot;)

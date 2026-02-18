@@ -1,0 +1,19 @@
+[application]
+config/name = "Math Quest Runner L1 Proto"
+running/main_scene = "res://L1.tscn"
+config/version = "0.1.0"
+config_features=PackedStringArray("4.6", "Forward Plus")
+
+[display]
+window/size/viewport_width=1024
+window/size/viewport_height=600
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[input]
+ui_left = Key("a")
+ui_right = Key("d")
+jump = Key("space")
+
+[rendering]
+renderer/rendering_method="gl_compatibility"

@@ -1,0 +1,25 @@
+[gd_scene format=3 uid=&quot;uid://player&quot;]
+
+[sub_resource type=&quot;RectangleShape2D&quot; id=&quot;RectangleShape2D_abc&quot;]
+size = Vector2i(28, 40)
+
+[sub_resource type=&quot;Camera2D&quot; id=&quot;Camera2D_xyz&quot;]
+zoom = Vector2(1, 1)
+
+[node name=&quot;Player&quot; type=&quot;CharacterBody2D&quot;]
+position = Vector2(100, 400)
+collision_layer = 1
+collision_mask = 1
+
+[node name=&quot;Sprite2D&quot; type=&quot;Sprite2D&quot; parent=&quot;.&quot;]
+texture = preload(&quot;../kenney_platformer/Spritesheets/spritesheet_players.png&quot;)
+region_enabled = true
+region_rect = Rect2(0, 0, 32, 32)
+centered = false
+
+[node name=&quot;CollisionShape2D&quot; type=&quot;CollisionShape2D&quot; parent=&quot;.&quot;]
+position = Vector2(14, 20)
+shape = SubResource(&quot;RectangleShape2D_abc&quot;)
+
+[node name=&quot;Camera2D&quot; type=&quot;Camera2D&quot; parent=&quot;.&quot;]
+script = SubResource(&quot;Camera2D_xyz&quot;)

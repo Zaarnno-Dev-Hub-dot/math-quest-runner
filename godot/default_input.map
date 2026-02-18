@@ -1,0 +1,5 @@
+# Default input map for proto
+[actions]
+jump={&quot;deadzone&quot;: 0.5, &quot;events&quot;: [InputEventKey.new() .with_physical_keycode(32)]} # space
+move_left={&quot;deadzone&quot;: 0.5, &quot;events&quot;: [InputEventKey.new() .with_physical_keycode(65)]} # A
+move_right={&quot;deadzone&quot;: 0.5, &quot;events&quot;: [InputEventKey.new() .with_physical_keycode(68)]} # D
