@@ -1,7 +1,6 @@
 # Math Quest Runner - Kanban Tasks / Stories
 
 ## Backlog (To Do)
-- [ ] Dragons asking for tools they already have / questions they know answers to (investigate memory leak?) @Blue
 - [ ] Define exact math problems per grade/level (e.g., Gr1: 1-10 add/sub) @Zaarno
 - [ ] Spec DB schema (Supabase tables) @Blue
 - [ ] Source/generate jungle tileset + BGs @Zaarno
