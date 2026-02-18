@@ -1,22 +1,15 @@
-# Math Quest Runner - Kanban Tasks / Stories
-
 ## Backlog (To Do)
-- [x] Art prototypes reviewed/approved (OPP jungle L1/L2 good) @Zaarno
-- [ ] Define exact math problems per grade/level (e.g., Gr1: 1-10 add/sub) @Zaarno
-- [ ] Spec DB schema (Supabase tables) @Blue
-- [ ] Source/generate jungle tileset + BGs @Zaarno
-- [ ] Audio tracks/SFX @Zaarno
-- [ ] Create Supabase project + seed data @Red
+- [ ] Import 300 math qs to JSON/DB seed (grade/level/type) @Zaarno
+- [ ] Supabase project + schema (users/profiles/sessions/leaderboard/questions) @Red
+- [ ] Build L2/L3 scenes (ruins/river tiles/enemies) @Red
+- [ ] Integrate math gates (coin/gremlin popups) @Red
+- [ ] Leaderboard UI + realtime @Red
+- [ ] Audio/SFX import @Zaarno
 
 ## In Progress
-- [ ] 
+- [ ] HTML5 L1 demo web link (subagent godot-html5-demo)
 
 ## Done
--
+- [x] Art prototypes reviewed/approved (OPP jungle L1/L2/L3 good) @Zaarno
 
-## Sprint Goals
-- Week 1: Godot proto (Level 1 mechanics + auth stub) @Red
-- Week 2: Full levels + Supabase integration @Red/Blue
-- Week 3: Leaderboard + polish @Blue
-
-**Assignments**: @Red = impl/coding, @Blue = arch/DB/planning, @Zaarno = design/assets
+Sprint 1: Demo + math import → Playtest!
