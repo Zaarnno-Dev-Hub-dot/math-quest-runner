@@ -21,20 +21,24 @@ A pixel-art jungle platformer where every **star coin** and **gremlin** asks a m
 ![After a wrong answer: the reason and the steps](docs/screenshots/why-hint.png)
 
 - **Moving platforms** appear in the Ancient Ruins and the River Canopy: some floating platforms slide sideways, ferry you over gaps, or bob up and down. Hop on and you ride along. They are shortcuts to coins; every level can still be finished with plain jumps.
+- **Crumbling platforms** are cracked and tinted orange. Once you land they shake for a moment, then drop away and come back a few seconds later. Keep moving. They are never the only way forward.
 - **Music:** an original tune for each level plays while you run (softer during a question). *Music* and *Sound* have separate buttons at the top.
 
 ![Moving platforms in the Ancient Ruins](docs/screenshots/moving-platforms.png)
+
+![A crumbling platform shaking under the hero](docs/screenshots/crumbling-platform.png)
 
 ## What each grade practices
 
 | Grade | Topics |
 |---|---|
-| 1 | Adding and subtracting within 20, then word problems |
-| 2 | Adding and subtracting within 100, intro times tables (level 2), word problems with equal groups |
-| 3 | Multiplication facts, division facts, multiplication and sharing word problems |
-| 4 | Two-digit times one-digit, equivalent fractions, adding fractions, comparing fractions, fractions of a set |
-| 5 | Adding fractions with different bottoms, decimals, multiplying by 10 and 100, order of operations |
+| 1 | Adding and subtracting within 20, missing numbers (`7 + ? = 12`), skip-count patterns, greatest and smallest, even and odd, counting coins, telling time later, word problems |
+| 2 | Adding and subtracting within 100, place value, first times tables, rounding to the nearest ten, coins and change, time, word problems with equal groups |
+| 3 | Multiplication and division facts, missing factors, rounding, place value, area and perimeter, time, coins, two-step word problems |
+| 4 | Two-digit times one-digit, place value and rounding to 1,000, equivalent fractions, adding, comparing and simplifying fractions, multiples, fractions of a set, units of measure, area and perimeter, two-step word problems |
+| 5 | Adding fractions with different bottoms, simplifying, decimals, multiplying by 10 and 100, percent of a number, means (averages), units, order of operations, multiples, two-step word problems |
 
+There are 31 kinds of question in all. Every one comes with a worked solution and a reason for each wrong answer.
 Level 1 is the gentlest version of the grade's topic, level 3 the hardest (and includes word problems).
 
 | Ancient Ruins | Amazon River Canopy |
@@ -56,14 +60,14 @@ Then open http://localhost:8000.
 ## For developers
 
 - `js/math.js` makes the questions (each with a worked solution and a reason for every wrong choice), `js/levels.js` builds the three levels from a fixed seed, `js/physics.js` is the platformer physics (including moving platforms), `js/music.js` generates the music, and `js/game.js` draws everything and runs the screens. `js/sprites.js` is generated.
-- `npm test` (Node 22, no packages needed) generates 60,000 questions and checks every answer against an independent calculation, checks that every question has a worked solution and a reason for each wrong choice, checks the music patterns, tests the moving-platform physics (landing, riding, one-way from below, walls), then runs a bot through all three levels, plus 180 other level seeds, to prove each one can be finished with single jumps only.
+- `npm test` (Node 22, no packages needed) generates 60,000 questions and checks every answer against an independent calculation, checks 60,000 questions of 31 kinds (each has a worked solution and a reason for every wrong choice, and the answer is verified independently), checks the music patterns, tests the moving- and crumbling-platform physics (landing, riding, one-way from below, walls, the crumble timer and coyote time), then runs a bot through all three levels, plus 180 other level seeds, to prove each one can be finished with single jumps only.
 - `python tools/build_sprites.py` turns the pack's animated GIFs into sprite strips (browsers draw only the first frame of a GIF on a canvas). Needs Pillow.
 - `node tools/capture-screenshots.mjs` regenerates `docs/screenshots/` with headless Chrome or Edge. Serve the folder on port 8766 first.
 - Open `index.html?debug` to get a `window.__mqr` object for scripted play-tests.
 
 ## What is not built yet
 
-Accounts, cloud saves and a global leaderboard from the [spec](docs/PRD.md); crumbling platforms. See the [roadmap](docs/ROADMAP.md).
+Accounts, cloud saves and a global leaderboard from the [spec](docs/PRD.md). See the [roadmap](docs/ROADMAP.md).
 
 ## License
 

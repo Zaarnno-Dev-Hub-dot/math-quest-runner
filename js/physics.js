@@ -2,10 +2,13 @@
 // World units are art pixels: one tile is 16 px. Position (x, y) is the player's feet, centred horizontally.
 // Moving platforms live in level.movers: { kind: 'h' | 'v', x, y (top surface), w, min, max, speed, dir, dx, dy }. They are one-way,
 // like the floating tile platforms: you land on them from above, and you ride along until you step or jump off.
+// Crumbling platforms are movers with kind 'c' that never move: they shake for CRUMBLE_DELAY seconds after you land, drop away
+// (m.gone) for CRUMBLE_GONE seconds, then come back.
 window.MQR = window.MQR || {};
 (function () {
   'use strict';
   const T = 16;
+  const CRUMBLE_DELAY = 0.6, CRUMBLE_GONE = 2.8;
   const P = {
     T,
     W: 18, H: 44,                 // player hitbox
@@ -30,6 +33,12 @@ window.MQR = window.MQR || {};
   function updateMovers(level, dt) {
     const ms = level.movers; if (!ms) return;
     for (const m of ms) {
+      if (m.kind === 'c') {
+        m.dx = 0; m.dy = 0;
+        if (m.state === 'shaking') { m.t -= dt; if (m.t <= 0) { m.state = 'gone'; m.gone = true; m.t = CRUMBLE_GONE; } }
+        else if (m.state === 'gone') { m.t -= dt; if (m.t <= 0) { m.state = 'solid'; m.gone = false; } }
+        continue;
+      }
       const px = m.x, py = m.y;
       const k = m.kind === 'h' ? 'x' : 'y';
       m[k] += m.dir * m.speed * dt;
@@ -41,7 +50,7 @@ window.MQR = window.MQR || {};
   // The platform whose top the feet crossed this step (from prevY to y), if any.
   function moverUnder(level, left, right, prevY, y) {
     const ms = level.movers; if (!ms) return null;
-    for (const m of ms) if (right > m.x && left < m.x + m.w && prevY <= m.y + 0.5 && y >= m.y - 0.001) return m;
+    for (const m of ms) if (!m.gone && right > m.x && left < m.x + m.w && prevY <= m.y + 0.5 && y >= m.y - 0.001) return m;
     return null;
   }
 
@@ -49,6 +58,7 @@ window.MQR = window.MQR || {};
   function step(p, input, dt, level) {
     p.t += dt;
     updateMovers(level, dt);
+    if (p.ride && p.onGround && p.ride.gone) { p.ride = null; p.onGround = false; }   // it crumbled away under you (coyote time still allows a jump)
     if (p.ride && p.onGround) { moveX(p, p.ride.dx, level); p.y = p.ride.y; }     // carried along by the platform
     else p.ride = null;
     const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
@@ -103,7 +113,7 @@ window.MQR = window.MQR || {};
         if ((t === 1 || t === 2) && prev <= r * T + 0.001 && p.y >= r * T) { land(p, r * T); return; }
       }
       const m = moverUnder(level, left, right, prev, p.y);
-      if (m) { land(p, m.y); p.ride = m; return; }
+      if (m) { land(p, m.y); p.ride = m; if (m.kind === 'c' && m.state === 'solid') { m.state = 'shaking'; m.t = CRUMBLE_DELAY; } return; }
     } else {
       const hit = overlapsSolid(level, left, right, p.y - P.H, p.y - P.H + 1);
       if (hit) { p.y = (hit.r + 1) * T + P.H; p.vy = 0; p.holdingJump = false; }
@@ -118,9 +128,9 @@ window.MQR = window.MQR || {};
   function floorBelow(level, x, y, depth) {
     const c = Math.floor(x / T);
     for (let r = Math.floor(y / T); r <= Math.floor((y + depth) / T); r++) { const t = tileAt(level, c, r); if (t === 1 || (t === 2 && r * T >= y - 0.5)) return true; }
-    for (const m of level.movers || []) if (x >= m.x && x <= m.x + m.w && m.y >= y - 0.5 && m.y <= y + depth) return true;
+    for (const m of level.movers || []) if (!m.gone && x >= m.x && x <= m.x + m.w && m.y >= y - 0.5 && m.y <= y + depth) return true;
     return false;
   }
 
-  MQR.Physics = { P, T, tileAt, newPlayer, step, floorBelow, overlapsSolid, updateMovers };
+  MQR.Physics = { P, T, tileAt, newPlayer, step, floorBelow, overlapsSolid, updateMovers, CRUMBLE_DELAY, CRUMBLE_GONE };
 })();

@@ -49,6 +49,8 @@
     open: () => Sound.tone(600, 0.08, 'triangle', 0.04, 900),
     clear: () => [523, 659, 784, 1047, 1319].forEach((f, i) => Sound.tone(f, 0.14, 'square', 0.05, null, i * 0.09)),
     over: () => [392, 330, 262, 196].forEach((f, i) => Sound.tone(f, 0.25, 'triangle', 0.06, null, i * 0.2)),
+    rumble: () => Sound.tone(90, 0.2, 'square', 0.03, 65),
+    crumble: () => Sound.tone(120, 0.3, 'sawtooth', 0.05, 45),
     unlock: () => [523, 784, 1047].forEach((f, i) => Sound.tone(f, 0.1, 'square', 0.04, null, i * 0.08)),
   };
 
@@ -205,7 +207,7 @@
     const g = G;
     Object.assign(g, {
       state: 'intro', levelIndex: i, level, p: Ph.newPlayer(level.start.x, level.start.y), halves: 6, coins: 0, stomps: 0, asked: 0, right: 0, wrong: 0,
-      time: 0, camX: 0, safe: { x: level.start.x, y: level.start.y }, inv: 0, flagToast: 0, particles: [], toasts: [], q: null, splashed: false, doubleUnlocked: i > 0,
+      time: 0, camX: 0, safe: { x: level.start.x, y: level.start.y }, inv: 0, flagToast: 0, particles: [], toasts: [], q: null, splashed: false, crumbleSeen: false, doubleUnlocked: i > 0,
     });
     g.p.canDouble = i > 0;
     g.layer = paintLevel(level);
@@ -300,6 +302,12 @@
     if (p.jumped) { p.jumped === 2 ? sfx.double() : sfx.jump(); }
     p.x = clamp(p.x, P.W / 2, L.width - P.W / 2);
     if (p.landed && p.vy === 0) burst(p.x, p.y, '#d9c79a', 3, 40);
+    (L.movers || []).forEach((m) => {                      // crumbling platforms: sound, dust and a one-time tip when one starts to go
+      if (m.kind !== 'c' || m.state === m.vis) return;
+      if (m.state === 'shaking') { sfx.rumble(); if (!G.crumbleSeen) { G.crumbleSeen = true; toast('This platform crumbles! Keep moving.', '#ffd54f'); } }
+      else if (m.state === 'gone') { sfx.crumble(); burst(m.x + m.w / 2, m.y + 4, '#c9b48a', 12, 60); }
+      m.vis = m.state;
+    });
 
     // Remember the last safe spot on solid ground (both sides supported) for respawning after a fall.
     if (p.onGround && !p.ride && Ph.floorBelow(L, p.x - 20, p.y, 4) && Ph.floorBelow(L, p.x + 20, p.y, 4)) { G.safe.x = p.x; G.safe.y = p.y; }
@@ -517,10 +525,32 @@
     drawSprite(name, frameAt(name, t + g.id * 0.37), g.x, g.y + hop, g.dir > 0, 1);
     if (!(g.flee > 0)) questionBubble(g.x, g.y - 28 + hop, t);
   }
+  // A crumbling platform: cracked, shakes during its warning, and leaves a faint outline while it is gone.
+  function drawCrumble(m, ruins, t, cell) {
+    const G_ = IMG.ground, TP = IMG.temple, n = Math.round(m.w / 16), y = Math.round(m.y);
+    let x0 = Math.round(m.x);
+    if (m.gone) {
+      const back = m.t < 0.6 ? 0.25 + 0.25 * Math.sin(t * 24) : 0.14;       // blinks just before it returns
+      ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,' + back.toFixed(2) + ')'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y + 0.5, m.w - 1, 9); ctx.restore();
+      return;
+    }
+    if (m.state === 'shaking') x0 += Math.round(Math.sin(t * 90) * 1.4);
+    const dy = m.state === 'shaking' ? Math.round(Math.sin(t * 70 + 1) * 0.8) : 0;
+    for (let i = 0; i < n; i++) {
+      const sx = i === 0 ? 0 : i === n - 1 ? (ruins ? 7 : 5) : (ruins ? 1 + (i % 6) : 1 + (i % 4)), x = x0 + i * 16;
+      if (ruins) { cell(TP, sx, 1, x, y - 16 + dy); cell(TP, sx, 2, x, y + dy); }
+      else { cell(G_, sx, 5, x, y - 16 + dy); cell(G_, sx, 6, x, y + dy); cell(G_, sx, 7, x, y + 16 + dy); }
+    }
+    ctx.save(); ctx.fillStyle = 'rgba(214,120,40,' + (m.state === 'shaking' ? 0.34 : 0.22) + ')'; ctx.fillRect(x0, y - 2 + dy, m.w, 14);   // warm tint marks the crumbling kind
+    ctx.strokeStyle = 'rgba(30,12,4,0.95)'; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i < n; i++) { const cx = x0 + i * 16 + 8; ctx.moveTo(cx - 5, y + 1 + dy); ctx.lineTo(cx - 1, y + 6 + dy); ctx.lineTo(cx - 4, y + 11 + dy); ctx.moveTo(cx + 3, y + 3 + dy); ctx.lineTo(cx + 6, y + 8 + dy); }
+    ctx.stroke(); ctx.strokeStyle = 'rgba(255,236,190,0.55)'; ctx.lineWidth = 0.8; ctx.translate(1.2, 0); ctx.stroke(); ctx.restore();
+  }
   function drawMovers(L, theme, t) {
     const ruins = theme === 'ruins', G_ = IMG.ground, TP = IMG.temple;
     const cell = (img, cx, cy, dx, dy) => { if (img) ctx.drawImage(img, cx * 16, cy * 16, 16, 16, dx, dy, 16, 16); };
     (L.movers || []).forEach((m) => {
+      if (m.kind === 'c') { drawCrumble(m, ruins, t, cell); return; }
       const n = Math.round(m.w / 16), x0 = Math.round(m.x), y = Math.round(m.y);
       for (let i = 0; i < n; i++) {
         const sx = i === 0 ? 0 : i === n - 1 ? (ruins ? 7 : 5) : (ruins ? 1 + (i % 6) : 1 + (i % 4)), x = x0 + i * 16;

@@ -6,9 +6,9 @@ window.MQR = window.MQR || {};
   const T = 16, ROWS = 17, BOTTOM = ROWS - 1;
 
   const CONFIGS = [
-    { id: 1, name: 'Sunny Clearing', theme: 'sunny', seed: 1101, length: 150, maxGap: 3, gremlinSpeed: 18, platformRate: 0.24, hint: 'Bright open jungle. Watch out for the little frogs!' },
-    { id: 2, name: 'Ancient Ruins', theme: 'ruins', seed: 2202, length: 165, maxGap: 3, gremlinSpeed: 24, platformRate: 0.30, movers: { high: 0.6, bridge: 0.6 }, moverSpeed: 22, hint: 'Mossy temple stones and higher platforms.' },
-    { id: 3, name: 'Amazon River Canopy', theme: 'river', seed: 3303, length: 180, maxGap: 4, gremlinSpeed: 30, platformRate: 0.30, movers: { high: 0.7, bridge: 0.7, bob: 0.6 }, moverSpeed: 28, hint: 'Wide gaps over the river. Time your jumps.' },
+    { id: 1, name: 'Sunny Clearing', theme: 'sunny', seed: 1101, length: 150, maxGap: 3, gremlinSpeed: 18, platformRate: 0.24, crumble: { high: 0.3, low: 0.1 }, hint: 'Bright open jungle. Watch out for the little frogs!' },
+    { id: 2, name: 'Ancient Ruins', theme: 'ruins', seed: 2202, length: 165, maxGap: 3, gremlinSpeed: 24, platformRate: 0.30, movers: { high: 0.6, bridge: 0.6 }, crumble: { low: 0.5, bridge: 0.3 }, moverSpeed: 22, hint: 'Mossy temple stones and higher platforms.' },
+    { id: 3, name: 'Amazon River Canopy', theme: 'river', seed: 3303, length: 180, maxGap: 4, gremlinSpeed: 30, platformRate: 0.30, movers: { high: 0.7, bridge: 0.7, bob: 0.6 }, crumble: { low: 0.4, bridge: 0.5 }, moverSpeed: 28, hint: 'Wide gaps over the river. Time your jumps.' },
   ];
 
   function build(cfg) {
@@ -70,19 +70,21 @@ window.MQR = window.MQR || {};
     // Moving platforms: some floating platforms become movers. The terrain is untouched (a separate rng makes the choices, so
     // every seed keeps its layout) and movers are optional shortcuts, so every level stays finishable with plain jumps.
     const movers = [];
-    if (cfg.movers) {
-      const mr = MQR.Math.rng((cfg.seed ^ 0x51ed270b) >>> 0), chance = (p) => mr() < p, sp = cfg.moverSpeed || 24;
+    if (cfg.movers || cfg.crumble) {
+      const mr = MQR.Math.rng((cfg.seed ^ 0x51ed270b) >>> 0), chance = (p) => mr() < p, sp = cfg.moverSpeed || 24, mv = cfg.movers || {}, cr = cfg.crumble || {};
       platforms.forEach((pl) => {
         const w = (pl.c1 - pl.c0) * T, clear = () => { for (let c = pl.c0; c < pl.c1; c++) work[pl.r * BIG + c] = 0; };
-        if (pl.kind === 'high' && chance(cfg.movers.high || 0)) {          // slides left and right
+        if (pl.kind === 'high' && chance(mv.high || 0)) {          // slides left and right
           clear(); movers.push({ kind: 'h', x: pl.c0 * T, y: pl.r * T, w, min: pl.c0 * T - 24, max: pl.c0 * T + 24, speed: sp, dir: chance(0.5) ? 1 : -1 });
-        } else if (pl.kind === 'low' && chance(cfg.movers.bob || 0)) {     // bobs up and down
+        } else if (pl.kind === 'low' && chance(mv.bob || 0)) {     // bobs up and down
           clear(); movers.push({ kind: 'v', x: pl.c0 * T, y: pl.r * T, w, min: pl.r * T - 24, max: pl.r * T + 24, speed: sp * 0.7, dir: chance(0.5) ? 1 : -1 });
-        } else if (pl.kind === 'bridge' && chance(cfg.movers.bridge || 0)) { // a ferry that swings across the gap
+        } else if (pl.kind === 'bridge' && chance(mv.bridge || 0)) { // a ferry that swings across the gap
           clear(); movers.push({ kind: 'h', x: pl.c0 * T - 16 + (chance(0.5) ? 0 : (pl.c1 - pl.c0) * T), y: pl.r * T, w: 32, min: pl.c0 * T - 16, max: pl.c1 * T - 16, speed: sp, dir: 1 });
+        } else if (chance(cr[pl.kind] || 0)) {                               // a platform that crumbles under you
+          clear(); movers.push({ kind: 'c', x: pl.c0 * T, y: pl.r * T, w, state: 'solid', t: 0, gone: false });
         }
       });
-      movers.forEach((m, i) => { m.id = i; m.dx = 0; m.dy = 0; if (m.kind === 'h' ? m.x >= m.max : m.y >= m.max) m.dir = -1; });
+      movers.forEach((m, i) => { m.id = i; m.dx = 0; m.dy = 0; if (m.kind === 'h' ? m.x >= m.max : m.kind === 'v' ? m.y >= m.max : false) m.dir = -1; });
     }
     const tiles = new Uint8Array(cols * ROWS);
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < cols; c++) tiles[r * cols + c] = work[r * BIG + c];
@@ -132,6 +134,11 @@ window.MQR = window.MQR || {};
     level.gremlins.forEach((g) => { const col = Math.floor(g.x / T), row = Math.floor(g.y / T); if (!solidAt(col, row) || solidAt(col, row - 1)) bad.push('gremlin ' + g.id + ' is not standing on the ground'); });
     level.gaps.forEach((g) => { if (g.c1 - g.c0 > level.maxGap) bad.push('gap wider than allowed at ' + g.c0); });
     (level.movers || []).forEach((m) => {
+      if (m.kind === 'c') {                    // crumbling: standing still, so its own tiles and the space above must be free
+        const cc0 = Math.floor(m.x / T), cc1 = Math.floor((m.x + m.w - 1) / T), rr = Math.floor(m.y / T);
+        for (let c = cc0; c <= cc1; c++) for (let r = Math.max(0, rr - 3); r <= rr; r++) if (c < 0 || c >= level.cols || solidAt(c, r)) { bad.push('crumbling platform ' + m.id + ' is inside solid ground at tile ' + c + ',' + r); return; }
+        return;
+      }
       const h = m.kind === 'h';
       if (!(m.w > 0 && m.speed > 0 && m.max > m.min && (h ? m.x >= m.min && m.x <= m.max : m.y >= m.min && m.y <= m.max))) { bad.push('mover ' + m.id + ' is malformed'); return; }
       // The whole area it sweeps (and the space above it for a standing player) must be free of solid tiles.

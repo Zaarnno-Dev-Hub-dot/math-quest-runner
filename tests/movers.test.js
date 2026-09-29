@@ -47,4 +47,27 @@ const run = (p, L, seconds, input) => { for (let i = 0; i < seconds * 120; i++) 
   const m = mover({}), L = world([m]);
   check('floorBelow counts a mover as floor', PH.floorBelow(L, m.x + 10, m.y - 2, 6) && !PH.floorBelow(L, m.x + m.w + 30, m.y - 2, 6));
 }
-console.log('problems:', bad); process.exit(bad ? 1 : 0);
+{   // crumbling platforms
+  const mk = (o) => Object.assign({ kind: 'c', x: 200, y: 160, w: 64, state: 'solid', t: 0, gone: false, dx: 0, dy: 0 }, o);
+  const m = mk({}), L = world([m]), p = PH.newPlayer(232, 120);
+  run(p, L, 0.3); check('lands on a crumbling platform and it starts to shake', p.onGround && p.ride === m && m.state === 'shaking', 'state ' + m.state);
+  run(p, L, PH.CRUMBLE_DELAY - 0.35); check('it holds for the warning time (you can still stand on it)', p.onGround && m.state === 'shaking', 'state ' + m.state + ' t=' + m.t.toFixed(2));
+  for (let i = 0; i < 240 && !m.gone; i++) PH.step(p, NONE, 1 / 120, L);
+  check('then it drops away and you fall', m.gone && !p.onGround && p.ride === null, 'gone=' + m.gone);
+  let landedOn = false; run(p, L, 1); check('you fall to the floor below, not through it', p.onGround && p.ride === null && Math.abs(p.y - 224) < 0.6, 'y=' + p.y.toFixed(1));
+  const p2 = PH.newPlayer(232, 120); p2.y = 100; p2.vy = 0;   // a second player passes through the gap while it is gone
+  run(p2, L, 0.5); check('a gone platform does not catch anyone', !p2.ride && p2.y > 160, 'y=' + p2.y.toFixed(1));
+  run(p, L, PH.CRUMBLE_GONE + 0.2); check('it comes back after a few seconds', m.state === 'solid' && !m.gone, 'state ' + m.state);
+  const p3 = PH.newPlayer(232, 100); run(p3, L, 0.6); check('and can be landed on again', p3.ride === m && p3.onGround);
+  // jumping off in time saves you
+  const m4 = mk({}), L4 = world([m4]), p4 = PH.newPlayer(232, 120); run(p4, L4, 0.3);
+  PH.step(p4, { left: false, right: false, jump: true, jumpPressed: true }, 1 / 120, L4); run(p4, L4, 0.3, { left: false, right: false, jump: true, jumpPressed: false });   // jump held: a full jump
+  const offEarly = p4.ride === null && m4.state === 'shaking'; run(p4, L4, 1.2);
+  check('jumping off during the warning works, and the platform still crumbles', offEarly && m4.state === 'gone', 'state ' + m4.state);
+  // coyote time: a jump just after it drops still works
+  const m5 = mk({}), L5 = world([m5]), p5 = PH.newPlayer(232, 120); run(p5, L5, 0.3 + PH.CRUMBLE_DELAY - 0.3 + 0.001);
+  for (let i = 0; i < 4; i++) PH.step(p5, NONE, 1 / 120, L5);   // now gone
+  PH.step(p5, { left: false, right: false, jump: true, jumpPressed: true }, 1 / 120, L5);
+  check('a jump right after the drop still works (coyote time)', p5.vy < 0, 'vy=' + p5.vy.toFixed(0));
+  check('floorBelow ignores a gone platform', (() => { const mm = mk({ gone: true, state: 'gone' }), LL = world([mm]); return !PH.floorBelow(LL, 230, 158, 6); })());
+}console.log('problems:', bad); process.exit(bad ? 1 : 0);
