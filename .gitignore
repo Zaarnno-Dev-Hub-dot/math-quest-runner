@@ -1,10 +1,8 @@
-# Godot 4
-.godot/
-*.translation
-export_presets.cfg
-export_credentials.cfg
-*.tmp
-
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Local tool folders
+.claude/
+node_modules/
+*.tmp

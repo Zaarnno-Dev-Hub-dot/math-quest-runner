@@ -1,0 +1,14 @@
+{
+  "name": "math-quest-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A pixel-art jungle platformer where every star coin and gremlin asks a math question (grades 1-5).",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "test": "node tests/math.test.js && node tests/levels.test.js",
+    "sprites": "python tools/build_sprites.py",
+    "screenshots": "node tools/capture-screenshots.mjs"
+  }
+}
