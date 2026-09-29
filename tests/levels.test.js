@@ -27,8 +27,10 @@ for (const cfg of LV.CONFIGS) {
   const level = LV.build(cfg); const problems = LV.verify(level);
   const maxGap = Math.max(0, ...level.gaps.map((g) => g.c1 - g.c0));
   const single = run(level, { double: false }), dbl = run(level, { double: true });
-  console.log(`L${cfg.id} ${cfg.name}: ${level.cols} cols, ${level.gaps.length} gaps (max ${maxGap}), ${level.platforms.length} platforms, coins ${level.coins.length}, gremlins ${level.gremlins.length}`);
+  console.log(`L${cfg.id} ${cfg.name}: ${level.cols} cols, ${level.gaps.length} gaps (max ${maxGap}), ${level.platforms.length} platforms, coins ${level.coins.length}, gremlins ${level.gremlins.length}, moving platforms ${level.movers.length}`);
   console.log(`   verify: ${problems.length ? problems.join('; ') : 'ok'} | single-jump bot: ${single.ok ? 'reached the flag in ' + single.t.toFixed(1) + 's' : 'FAILED ' + single.why} | double-jump bot: ${dbl.ok ? 'ok ' + dbl.t.toFixed(1) + 's' : 'FAILED ' + dbl.why}`);
+  if (cfg.movers && level.movers.length < 2) { console.log('   FAIL: expected at least 2 moving platforms'); fail++; }
+  if (!cfg.movers && level.movers.length) { console.log('   FAIL: level 1 should have no moving platforms'); fail++; }
   if (problems.length || !single.ok || !dbl.ok) fail++;
 }
 // A wider sweep: many seeds per config must also be completable, so a future config tweak cannot silently break a level.

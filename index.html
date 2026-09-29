@@ -44,6 +44,8 @@ h2 { font-size:1.6em; } .kicker { color:var(--gold); font-weight:800; letter-spa
 .feedback { min-height:2.6em; font-weight:800; margin-top:.5em; font-size:.85em; line-height:1.35; } .feedback.good { color:#7bf0a9; } .feedback.bad { color:#ff9a9a; }
 .stats { display:grid; grid-template-columns:repeat(4, auto); gap:.3em 1.6em; } .stats div { font-size:.78em; color:var(--muted); } .stats b { display:block; font-size:1.6em; color:var(--ink); }
 .bigstars { font-size:2.8em; color:#ffd54f; letter-spacing:.12em; line-height:1; } .bigstars i { font-style:normal; color:rgba(255,255,255,.18); }
+.how { text-align:left; font-size:.72em; line-height:1.5; color:#d7efe0; background:rgba(255,255,255,.07); border-radius:.6em; padding:.5em .8em; margin-top:.3em; }
+.small-btn { font-size:.95em; margin-top:.6em; }
 .hidden { display:none !important; }
 .rotate-hint { display:none; margin:10px 16px; text-align:center; color:var(--muted); font-size:15px; line-height:1.5; }
 @media (orientation: portrait) and (max-width: 700px) { .rotate-hint { display:block; } }
@@ -59,6 +61,7 @@ h2 { font-size:1.6em; } .kicker { color:var(--gold); font-weight:800; letter-spa
   <a class="tb" href="https://github.com/Zaarnno-Dev-Hub-dot/math-quest-runner" target="_blank" rel="noopener">About</a>
   <div class="tb-title">Math Quest Runner</div>
   <button class="tb" id="btnPause" type="button" disabled>Pause</button>
+  <button class="tb" id="btnMusic" type="button">Music: On</button>
   <button class="tb" id="btnSound" type="button">Sound: On</button>
 </header>
 <main id="stage">
@@ -69,7 +72,7 @@ h2 { font-size:1.6em; } .kicker { color:var(--gold); font-weight:800; letter-spa
     <p class="sub">Run through the jungle. Touch a star coin or a gremlin and it asks a math question. Right answers collect and stomp; wrong answers cost half a heart.</p>
     <div class="kicker">Pick your grade</div>
     <div class="grades" id="gradeGrid"></div>
-    <p class="small"><b>Move:</b> A / D or arrow keys &middot; <b>Jump:</b> Space, W or Up (press again in the air to double-jump once you learn it) &middot; <b>Answer:</b> keys 1-4 or click &middot; <b>Pause:</b> Esc<br>To finish a level, reach the flag with at least <b>8 of 10 star coins</b> and <b>6 of 8 gremlins</b>.</p>
+    <p class="small"><b>Move:</b> A / D or arrow keys &middot; <b>Jump:</b> Space, W or Up (press again in the air to double-jump once you learn it) &middot; <b>Answer:</b> keys 1-4 or click &middot; <b>Pause:</b> Esc &middot; Some platforms <b>move</b>: hop on and ride along<br>To finish a level, reach the flag with at least <b>8 of 10 star coins</b> and <b>6 of 8 gremlins</b>.</p>
   </section>
 
   <section class="overlay" id="scrIntro">
@@ -91,6 +94,8 @@ h2 { font-size:1.6em; } .kicker { color:var(--gold); font-weight:800; letter-spa
         <button class="ans" type="button" data-i="3"></button>
       </div>
       <div class="feedback" id="qFeedback"></div>
+      <div class="how hidden" id="qHow"></div>
+      <button class="btn small-btn hidden" id="btnGotIt" type="button">Got it</button>
     </div>
   </section>
 
@@ -121,6 +126,7 @@ h2 { font-size:1.6em; } .kicker { color:var(--gold); font-weight:800; letter-spa
 <script src="js/math.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/levels.js"></script>
+<script src="js/music.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

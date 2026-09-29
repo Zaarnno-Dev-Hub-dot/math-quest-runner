@@ -1,5 +1,7 @@
 // Math Quest Runner: physics. Pure logic (no DOM) so it also runs in Node for the level tests.
 // World units are art pixels: one tile is 16 px. Position (x, y) is the player's feet, centred horizontally.
+// Moving platforms live in level.movers: { kind: 'h' | 'v', x, y (top surface), w, min, max, speed, dir, dx, dy }. They are one-way,
+// like the floating tile platforms: you land on them from above, and you ride along until you step or jump off.
 window.MQR = window.MQR || {};
 (function () {
   'use strict';
@@ -21,12 +23,34 @@ window.MQR = window.MQR || {};
   }
 
   function newPlayer(x, y) {
-    return { x, y, vx: 0, vy: 0, onGround: false, facing: 1, coyote: 0, buffer: 0, jumpsUsed: 0, holdingJump: false, canDouble: false, dead: false, t: 0, landed: false };
+    return { x, y, vx: 0, vy: 0, onGround: false, facing: 1, coyote: 0, buffer: 0, jumpsUsed: 0, holdingJump: false, canDouble: false, dead: false, t: 0, landed: false, ride: null };
+  }
+
+  // Advance every moving platform by dt. Called once per physics step, so platforms freeze whenever the game is paused.
+  function updateMovers(level, dt) {
+    const ms = level.movers; if (!ms) return;
+    for (const m of ms) {
+      const px = m.x, py = m.y;
+      const k = m.kind === 'h' ? 'x' : 'y';
+      m[k] += m.dir * m.speed * dt;
+      if (m[k] > m.max) { m[k] = m.max - (m[k] - m.max); m.dir = -1; }
+      else if (m[k] < m.min) { m[k] = m.min + (m.min - m[k]); m.dir = 1; }
+      m.dx = m.x - px; m.dy = m.y - py;
+    }
+  }
+  // The platform whose top the feet crossed this step (from prevY to y), if any.
+  function moverUnder(level, left, right, prevY, y) {
+    const ms = level.movers; if (!ms) return null;
+    for (const m of ms) if (right > m.x && left < m.x + m.w && prevY <= m.y + 0.5 && y >= m.y - 0.001) return m;
+    return null;
   }
 
   // input: { left, right, jump (held), jumpPressed (edge this frame) }
   function step(p, input, dt, level) {
     p.t += dt;
+    updateMovers(level, dt);
+    if (p.ride && p.onGround) { moveX(p, p.ride.dx, level); p.y = p.ride.y; }     // carried along by the platform
+    else p.ride = null;
     const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
     const accel = p.onGround ? P.ACCEL : P.AIR_ACCEL;
     if (dir) { p.facing = dir; p.vx += dir * accel * dt; if (Math.abs(p.vx) > P.RUN) p.vx = Math.sign(p.vx) * P.RUN; }
@@ -67,7 +91,7 @@ window.MQR = window.MQR || {};
 
   function moveY(p, dy, level) {
     const prev = p.y;
-    p.onGround = false;
+    p.onGround = false; p.ride = null;
     p.y += dy;
     const left = p.x - P.W / 2, right = p.x + P.W / 2;
     if (dy >= 0) {
@@ -78,6 +102,8 @@ window.MQR = window.MQR || {};
         const t = tileAt(level, c, r);
         if ((t === 1 || t === 2) && prev <= r * T + 0.001 && p.y >= r * T) { land(p, r * T); return; }
       }
+      const m = moverUnder(level, left, right, prev, p.y);
+      if (m) { land(p, m.y); p.ride = m; return; }
     } else {
       const hit = overlapsSolid(level, left, right, p.y - P.H, p.y - P.H + 1);
       if (hit) { p.y = (hit.r + 1) * T + P.H; p.vy = 0; p.holdingJump = false; }
@@ -92,8 +118,9 @@ window.MQR = window.MQR || {};
   function floorBelow(level, x, y, depth) {
     const c = Math.floor(x / T);
     for (let r = Math.floor(y / T); r <= Math.floor((y + depth) / T); r++) { const t = tileAt(level, c, r); if (t === 1 || (t === 2 && r * T >= y - 0.5)) return true; }
+    for (const m of level.movers || []) if (x >= m.x && x <= m.x + m.w && m.y >= y - 0.5 && m.y <= y + depth) return true;
     return false;
   }
 
-  MQR.Physics = { P, T, tileAt, newPlayer, step, floorBelow, overlapsSolid };
+  MQR.Physics = { P, T, tileAt, newPlayer, step, floorBelow, overlapsSolid, updateMovers };
 })();

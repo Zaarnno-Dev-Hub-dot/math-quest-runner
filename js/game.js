@@ -19,7 +19,7 @@
   const save = (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; } })();
   save.best = save.best || {};                   // best['g3'] = [ {stars, acc, time} x3 ]
   save.runs = Array.isArray(save.runs) ? save.runs : [];
-  save.settings = Object.assign({ sound: true }, save.settings || {});
+  save.settings = Object.assign({ sound: true, music: true }, save.settings || {});
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* storage blocked */ } }
 
   // ------------------------------------------------------------------
@@ -51,6 +51,39 @@
     over: () => [392, 330, 262, 196].forEach((f, i) => Sound.tone(f, 0.25, 'triangle', 0.06, null, i * 0.2)),
     unlock: () => [523, 784, 1047].forEach((f, i) => Sound.tone(f, 0.1, 'square', 0.04, null, i * 0.08)),
   };
+
+  // ------------------------------------------------------------------
+  // Music: one original tune per level theme (js/music.js), scheduled a little ahead on the audio clock.
+  // Plays while you run, ducks under a question, and stops on pause, menus and level end.
+  // ------------------------------------------------------------------
+  const MusicPlayer = {
+    run: null, duck: false, bus: null,
+    getBus() { const ac = Sound.ac; if (!this.bus || this.bus.context !== ac) { this.bus = ac.createGain(); this.bus.gain.value = 0.5; this.bus.connect(ac.destination); } return this.bus; },
+    start(theme) {
+      if (!save.settings.music || !Sound.ac || !MQR.Music) return;
+      this.stop();
+      const ac = Sound.ac, gain = ac.createGain(); gain.gain.value = this.duck ? 0.35 : 1; gain.connect(this.getBus());
+      this.run = { theme, gain, bar: 0, next: ac.currentTime + 0.08, timer: setInterval(() => this.tick(), 60) };
+      this.tick();
+    },
+    tick() {
+      const r = this.run; if (!r) return; const ac = Sound.ac;
+      while (r.next < ac.currentTime + 0.5) { MQR.Music.schedule(ac, r.gain, r.theme, r.bar, r.next); r.next += MQR.Music.barSeconds(r.theme); r.bar++; }
+    },
+    stop() {
+      const r = this.run; if (!r) return; clearInterval(r.timer); this.run = null;
+      const now = Sound.ac.currentTime; r.gain.gain.cancelScheduledValues(now); r.gain.gain.setTargetAtTime(0, now, 0.05);
+      setTimeout(() => { try { r.gain.disconnect(); } catch (e) { /* already gone */ } }, 600);
+    },
+    setDuck(d) { this.duck = d; if (this.run) this.run.gain.gain.setTargetAtTime(d ? 0.35 : 1, Sound.ac.currentTime, 0.08); },
+  };
+  function syncMusic() {
+    const want = save.settings.music && G && G.level && (G.state === 'play' || G.state === 'question');
+    if (!want) { MusicPlayer.stop(); return; }
+    if (!MusicPlayer.run || MusicPlayer.run.theme !== G.level.theme) MusicPlayer.start(G.level.theme);
+    MusicPlayer.setDuck(G.state === 'question');
+  }
+  setInterval(syncMusic, 1000);   // also catches the case where the audio context was not unlocked yet
 
   // ------------------------------------------------------------------
   // Images
@@ -107,6 +140,7 @@
     Sound.unlock();
     if (G && G.state === 'question') {
       if (/^[1-4]$/.test(e.key)) { e.preventDefault(); answer(Number(e.key) - 1); }
+      else if ((e.key === 'Enter' || e.key === ' ') && G.q && G.q.needAck) { e.preventDefault(); closeQuestion(); }
       else if (e.key === 'Escape') { e.preventDefault(); }
       return;
     }
@@ -141,6 +175,7 @@
     $('touch').classList.toggle('active', G.state === 'play' || G.state === 'question' || G.state === 'pause');
     if (id) { const p = $(id).querySelector('[data-primary]:not([disabled])'); if (p) setTimeout(() => p.focus({ preventScroll: true }), 30); }
     void canPause;
+    syncMusic();
   }
   const starsHtml = (n, of) => { let s = ''; for (let i = 0; i < (of || 3); i++) s += i < n ? '&#9733;' : '<i>&#9733;</i>'; return s; };
   const gradeBest = (g) => (save.best['g' + g] || []).reduce((n, r) => n + (r ? r.stars : 0), 0);
@@ -207,6 +242,7 @@
     const qt = $('qText'); qt.textContent = data.text; qt.classList.toggle('long', data.text.length > 26);
     answerButtons.forEach((b, i) => { b.disabled = false; b.className = 'ans'; b.innerHTML = '<small>' + (i + 1) + '</small>' + data.choices[i]; });
     $('qFeedback').textContent = ''; $('qFeedback').className = 'feedback';
+    $('qHow').classList.add('hidden'); $('btnGotIt').classList.add('hidden');
     showScreen('scrQuestion');
   }
   function answer(i) {
@@ -224,15 +260,20 @@
       else { it.alive = false; it.deadT = 0.5; G.stomps++; sfx.stomp(); burst(it.x, it.y - 8, '#9be37a', 14); floatText(it.x, it.y - 20, 'Stomp!', '#9be37a'); if (q.stomp) { p.vy = -260; p.onGround = false; p.jumpsUsed = 1; } else { p.vx = -p.facing * 60; } }
     } else {
       G.wrong++; G.halves = Math.max(0, G.halves - 1); sfx.wrong();
-      $('qFeedback').textContent = 'Not quite. ' + (q.data.explain || '') + '  You can try again later.'; $('qFeedback').className = 'feedback bad';
-      q.closeT = 2.6; G.inv = 1.8;
+      const picked = q.data.choices[i];
+      $('qFeedback').textContent = 'Not quite. ' + ((q.data.why && q.data.why[picked]) || '') + ' You can try again later.'; $('qFeedback').className = 'feedback bad';
+      $('qHow').textContent = 'How to work it out: ' + (q.data.how || q.data.explain); $('qHow').classList.remove('hidden');   // stays until the player taps Got it, so there is time to read
+      q.needAck = true; q.closeT = Infinity; G.inv = 1.8;
+      $('btnGotIt').classList.remove('hidden'); setTimeout(() => $('btnGotIt').focus({ preventScroll: true }), 30);
       if (q.kind === 'coin') it.cool = 3; else { it.flee = 1.6; it.fleeDir = it.x >= p.x ? 1 : -1; }
       p.vy = -170; p.vx = -p.facing * 90;
       burst(p.x, p.y - 20, '#ff8a8a', 8, 70);
     }
   }
   answerButtons.forEach((b) => b.addEventListener('click', () => answer(Number(b.dataset.i))));
+  $('btnGotIt').addEventListener('click', closeQuestion);
   function closeQuestion() {
+    if (!G.q) return;
     G.q = null;
     if (G.halves <= 0) return gameOver();
     G.state = 'play'; showScreen(null);
@@ -261,7 +302,7 @@
     if (p.landed && p.vy === 0) burst(p.x, p.y, '#d9c79a', 3, 40);
 
     // Remember the last safe spot on solid ground (both sides supported) for respawning after a fall.
-    if (p.onGround && Ph.floorBelow(L, p.x - 20, p.y, 4) && Ph.floorBelow(L, p.x + 20, p.y, 4)) { G.safe.x = p.x; G.safe.y = p.y; }
+    if (p.onGround && !p.ride && Ph.floorBelow(L, p.x - 20, p.y, 4) && Ph.floorBelow(L, p.x + 20, p.y, 4)) { G.safe.x = p.x; G.safe.y = p.y; }
     const waterY = L.theme === 'river' ? 15 * T : Infinity;
     if (p.dead || p.y > waterY + 6) { fell(); return; }
 
@@ -310,7 +351,7 @@
     G.halves = Math.max(0, G.halves - 1);
     if (G.halves <= 0) return gameOver();
     toast(L.theme === 'river' ? 'Splash! Lost half a heart.' : 'Oops! Lost half a heart.', '#ff9a9a');
-    Object.assign(p, { x: G.safe.x, y: G.safe.y, vx: 0, vy: 0, dead: false, onGround: true, jumpsUsed: 0 }); G.inv = 1.4;
+    Object.assign(p, { x: G.safe.x, y: G.safe.y, vx: 0, vy: 0, dead: false, onGround: true, jumpsUsed: 0, ride: null }); G.inv = 1.4;
   }
 
   function gameOver() { G.state = 'over'; releaseKeys(); sfx.over(); showScreen('scrOver'); }
@@ -476,6 +517,25 @@
     drawSprite(name, frameAt(name, t + g.id * 0.37), g.x, g.y + hop, g.dir > 0, 1);
     if (!(g.flee > 0)) questionBubble(g.x, g.y - 28 + hop, t);
   }
+  function drawMovers(L, theme, t) {
+    const ruins = theme === 'ruins', G_ = IMG.ground, TP = IMG.temple;
+    const cell = (img, cx, cy, dx, dy) => { if (img) ctx.drawImage(img, cx * 16, cy * 16, 16, 16, dx, dy, 16, 16); };
+    (L.movers || []).forEach((m) => {
+      const n = Math.round(m.w / 16), x0 = Math.round(m.x), y = Math.round(m.y);
+      for (let i = 0; i < n; i++) {
+        const sx = i === 0 ? 0 : i === n - 1 ? (ruins ? 7 : 5) : (ruins ? 1 + (i % 6) : 1 + (i % 4)), x = x0 + i * 16;
+        if (ruins) { cell(TP, sx, 1, x, y - 16); cell(TP, sx, 2, x, y); }
+        else { cell(G_, sx, 5, x, y - 16); cell(G_, sx, 6, x, y); cell(G_, sx, 7, x, y + 16); }
+      }
+      // little arrows on the underside show which way it moves
+      const cx = x0 + m.w / 2, cy = y + 7, a = 0.45 + 0.2 * Math.sin(t * 4 + m.id);
+      ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')';
+      ctx.beginPath();
+      if (m.kind === 'h') { ctx.moveTo(cx - 9, cy); ctx.lineTo(cx - 4, cy - 3); ctx.lineTo(cx - 4, cy + 3); ctx.moveTo(cx + 9, cy); ctx.lineTo(cx + 4, cy - 3); ctx.lineTo(cx + 4, cy + 3); }
+      else { ctx.moveTo(cx, cy - 6); ctx.lineTo(cx - 3, cy - 1); ctx.lineTo(cx + 3, cy - 1); ctx.moveTo(cx, cy + 6); ctx.lineTo(cx - 3, cy + 1); ctx.lineTo(cx + 3, cy + 1); }
+      ctx.fill();
+    });
+  }
   function drawFlag(L, t) {
     const x = Math.round(L.flag.x), y = Math.round(L.flag.y);
     ctx.fillStyle = '#5c4326'; ctx.fillRect(x - 1, y - 72, 3, 72); ctx.fillStyle = '#ffd54f'; ctx.fillRect(x - 2, y - 74, 5, 4);
@@ -542,6 +602,7 @@
       }
     });
     if (g.layer) ctx.drawImage(g.layer, 0, 0);
+    drawMovers(L, theme, g.t);
     drawFlag(L, g.t);
     L.coins.forEach((c) => { if (!c.taken && c.x > cam - 20 && c.x < cam + VIEW_W + 20) drawCoin(c, g.t); });
     L.gremlins.forEach((gm) => { if (gm.x > cam - 60 && gm.x < cam + VIEW_W + 60) drawGremlin(gm, theme, g.t); });
@@ -572,6 +633,8 @@
   $('btnPause').addEventListener('click', () => { if (G.state === 'play') pause(); else if (G.state === 'pause') resume(); });
   function syncSound() { $('btnSound').textContent = 'Sound: ' + (save.settings.sound ? 'On' : 'Off'); }
   $('btnSound').addEventListener('click', () => { save.settings.sound = !save.settings.sound; persist(); syncSound(); Sound.unlock(); });
+  function syncMusicBtn() { $('btnMusic').textContent = 'Music: ' + (save.settings.music ? 'On' : 'Off'); }
+  $('btnMusic').addEventListener('click', () => { save.settings.music = !save.settings.music; persist(); syncMusicBtn(); Sound.unlock(); syncMusic(); });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (G.state === 'intro' && document.activeElement === document.body) { e.preventDefault(); begin(); }
@@ -598,9 +661,9 @@
 
   // Test hook: open index.html?debug and use window.__mqr from the console (used by the play-tests).
   if (/[?&]debug\b/.test(location.search)) {
-    window.__mqr = { get G() { return G; }, startRun, startLevel, begin, answer, engage, finishLevel, save, Ph, setKey, update, render };
+    window.__mqr = { get G() { return G; }, MusicPlayer, syncMusic, Sound, startRun, startLevel, begin, answer, engage, finishLevel, save, Ph, setKey, update, render };
   }
 
-  fit(); syncSound();
+  fit(); syncSound(); syncMusicBtn();
   loadAll().then(() => { showMenu(); requestAnimationFrame(frame); });
 })();
