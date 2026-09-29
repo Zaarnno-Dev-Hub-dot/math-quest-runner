@@ -1,49 +1,63 @@
 # Math Quest Runner
 
-A pixel-art jungle platformer where every coin and gremlin asks a math question. Your grade picks the topic,
-and a wrong answer costs half a heart.
+[![Tests](https://github.com/Zaarnno-Dev-Hub-dot/math-quest-runner/actions/workflows/test.yml/badge.svg)](https://github.com/Zaarnno-Dev-Hub-dot/math-quest-runner/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Status: design and art prototype, on hold.** The spec and the art direction are done, but the Godot scenes
-> are early drafts that do not open cleanly yet, so there is nothing to play here.
-> **Looking for finished math games?** Try **MathMan** and the rest of the
-> [Learning Arcade](https://github.com/Zaarnno-Dev-Hub-dot/zaarno-learning-arcade), free and playable in a browser.
+A pixel-art jungle platformer where every **star coin** and **gremlin** asks a math question. Pick your grade (1 to 5), run through three levels, and stomp gremlins by solving the problem they ask. Runs in any modern browser, on a keyboard or a touch screen. No sign-up, no ads, no tracking.
 
-![Jungle level mockup from the OPP tileset](assets/opp-jungle/opp1_jungle_tiles/mockups/jungle01.png)
+### [Play it in your browser](https://zaarnno-dev-hub-dot.github.io/math-quest-runner/)
 
-<sub>Art direction: a mockup that ships with the CC0 OPP jungle tileset, not a screenshot of this game.</sub>
+![Sunny Clearing: the aviator hero, a star coin and a gremlin frog](docs/screenshots/sunny-clearing.png)
 
-## The idea
+## How it plays
 
-- Pick Grade 1 to 5; the whole session uses that grade's math topic (add/subtract up to fractions and decimals).
-- Coins and gremlins stay blank until you touch them, then show a problem. Right: collect or stomp. Wrong: lose half a heart.
-- Three jungle levels per grade (Sunny Clearing, Ancient Ruins, Amazon River Canopy), double-jump taught in level 1.
-- Guest play, optional login, and a per-grade leaderboard.
+- **Run and jump** with A / D (or the arrow keys) and Space, W or Up. A double-jump unlocks a little way into level 1. On a phone or tablet, on-screen buttons appear.
+- **Touch a star coin or a gremlin** and the game pauses on a question with four answers (keys 1 to 4, or tap). Right: the coin is collected, or the gremlin is stomped. Wrong: you lose **half a heart**, and the coin or gremlin stays so you can try again.
+- **Finish a level** by reaching the flag with at least **8 of 10 star coins** and **6 of 8 gremlins**. You have 3 hearts, and falling into a gap also costs half a heart.
+- **Stars:** 1 for finishing, 2 for 85% or more correct, 3 for that plus every coin and every gremlin. Best stars, accuracy and time are saved on your device for each grade.
 
-The full spec is in [docs/PRD.md](docs/PRD.md).
+![A question pops up when you touch a star coin](docs/screenshots/question.png)
 
-## What is in this repo
+## What each grade practices
 
-| Path | What it is | State |
-|---|---|---|
-| `docs/PRD.md` | Product spec | Draft |
-| `docs/ROADMAP.md` | What is left to build | Current |
-| `godot/` | Player controller, gremlin patrol, and a Level 1 scene | Early drafts, see known issues |
-| `assets/opp-jungle/` | CC0 jungle tileset and sprites | Ready to use |
+| Grade | Topics |
+|---|---|
+| 1 | Adding and subtracting within 20, then word problems |
+| 2 | Adding and subtracting within 100, intro times tables (level 2), word problems with equal groups |
+| 3 | Multiplication facts, division facts, multiplication and sharing word problems |
+| 4 | Two-digit times one-digit, equivalent fractions, adding fractions, comparing fractions, fractions of a set |
+| 5 | Adding fractions with different bottoms, decimals, multiplying by 10 and 100, order of operations |
 
-## Known issues
+Level 1 is the gentlest version of the grade's topic, level 3 the hardest (and includes word problems).
 
-- `godot/L1.tscn` and `godot/player.tscn` were generated and never run in the editor. They reference sprite files
-  that are not in this repository (`kenney_platformer/...`), point at resources that are not declared, and will
-  need to be rebuilt in Godot's editor.
-- Math gates, the question bank, the later levels, audio, the backend and the leaderboard do not exist yet.
-- Tested by reading only: the Godot fixes in the latest commit (HTML-escaped quotes removed, a missing input call
-  replaced) were made without Godot installed.
+| Ancient Ruins | Amazon River Canopy |
+|---|---|
+| ![Ancient Ruins](docs/screenshots/ancient-ruins.png) | ![Amazon River Canopy](docs/screenshots/river-canopy.png) |
 
-## Open it anyway
+## Run it locally
 
-Install [Godot 4.x](https://godotengine.org/), open `godot/project.godot`, and expect to repair the level scene
-before it will run.
+No build step and no dependencies. Serve the folder and open it:
+
+```bash
+git clone https://github.com/Zaarnno-Dev-Hub-dot/math-quest-runner.git
+cd math-quest-runner
+python -m http.server 8000
+```
+
+Then open http://localhost:8000.
+
+## For developers
+
+- `js/math.js` makes the questions, `js/levels.js` builds the three levels from a fixed seed, `js/physics.js` is the platformer physics, and `js/game.js` draws everything and runs the screens. `js/sprites.js` is generated.
+- `npm test` (Node 22, no packages needed) generates 60,000 questions and checks every answer against an independent calculation, then runs a bot through all three levels, plus 180 other level seeds, to prove each one can be finished with single jumps only.
+- `python tools/build_sprites.py` turns the pack's animated GIFs into sprite strips (browsers draw only the first frame of a GIF on a canvas). Needs Pillow.
+- `node tools/capture-screenshots.mjs` regenerates `docs/screenshots/` with headless Chrome or Edge. Serve the folder on port 8766 first.
+- Open `index.html?debug` to get a `window.__mqr` object for scripted play-tests.
+
+## What is not built yet
+
+Accounts, cloud saves and a global leaderboard from the [spec](docs/PRD.md); background music; moving and crumbling platforms. See the [roadmap](docs/ROADMAP.md).
 
 ## License
 
-MIT for the code and docs ([LICENSE](LICENSE)). The jungle art is CC0; see [CREDITS.md](CREDITS.md).
+MIT for the code and docs ([LICENSE](LICENSE)). The art is CC0; see [CREDITS.md](CREDITS.md).

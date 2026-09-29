@@ -5,6 +5,25 @@ Target platforms: Web (HTML5), iOS, Android (Godot 4.x or Unity recommended)
 Backend: Supabase (Auth + Postgres + Realtime)
 Scope: MVP with login, 3 visually distinct levels per grade, leaderboard, and full analytics export
 
+## Implementation status (v0.1)
+
+This document is the original spec. What exists today, and how it differs:
+
+| Spec item | Status |
+|---|---|
+| Grade 1-5 selector, topic locked per grade | Built |
+| 3 jungle levels (Sunny Clearing, Ancient Ruins, Amazon River Canopy) | Built, generated from a fixed seed |
+| Star coins and gremlins that ask a question only when touched | Built (10 coins and 8 gremlins per level) |
+| Win condition: 8 of 10 coins and 6 of 8 gremlins, 3 hearts | Built |
+| Wrong answer costs half a heart | Built. The coin or gremlin stays, so a level can always be finished |
+| Double-jump taught early in level 1 | Built |
+| Touch controls | Built |
+| Word problems in level 3 | Built |
+| Guest play with a local save | Built (best stars, accuracy and time per grade) |
+| Login, Supabase backend, global leaderboard, share image | Not built. Progress is saved in the browser only |
+| Moving and crumbling platforms | Not built |
+| Per-level music | Not built (sound effects only) |
+| Voice-over | Not built |
 ## 1. Executive Summary
 Math Quest Runner is a delightful, fully player-controlled 2D pixel-art platformer that teaches elementary math through mandatory problem-solving.
 Players log in (or play as guest), choose Grade 1–5 → the entire session uses only that grade’s math topic.

@@ -1,6 +1,4 @@
 # Credits
 
-- **Jungle tiles and sprites:** the [Open Pixel Project](http://www.openpixelproject.com/) (OPP) jungle set, more
-  than 35 pixel artists, released into the public domain under CC0. The pack and its license text are in
-  `assets/opp-jungle/opp1_jungle_tiles/`.
-- **Everything else** (scripts, scenes, the spec in `docs/`): MIT, see [LICENSE](LICENSE).
+- **Art:** the [Open Pixel Project](http://www.openpixelproject.com/) jungle set (tiles, backgrounds, the aviator hero and the frogs), by more than 35 pixel artists, released into the public domain under CC0. The pack and its license text are in `assets/opp-jungle/opp1_jungle_tiles/`. `assets/sprites/` holds sprite strips made from that pack's animated GIFs by `tools/build_sprites.py`.
+- **Everything else** (code, level generator, question generator, sounds made with the Web Audio API, spec): MIT, see [LICENSE](LICENSE).
