@@ -1,25 +1,25 @@
-[gd_scene format=3 uid=&quot;uid://player&quot;]
+[gd_scene format=3 uid="uid://player"]
 
-[sub_resource type=&quot;RectangleShape2D&quot; id=&quot;RectangleShape2D_abc&quot;]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_abc"]
 size = Vector2i(28, 40)
 
-[sub_resource type=&quot;Camera2D&quot; id=&quot;Camera2D_xyz&quot;]
+[sub_resource type="Camera2D" id="Camera2D_xyz"]
 zoom = Vector2(1, 1)
 
-[node name=&quot;Player&quot; type=&quot;CharacterBody2D&quot;]
+[node name="Player" type="CharacterBody2D"]
 position = Vector2(100, 400)
 collision_layer = 1
 collision_mask = 1
 
-[node name=&quot;Sprite2D&quot; type=&quot;Sprite2D&quot; parent=&quot;.&quot;]
-texture = preload(&quot;../kenney_platformer/Spritesheets/spritesheet_players.png&quot;)
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = preload("../kenney_platformer/Spritesheets/spritesheet_players.png")
 region_enabled = true
 region_rect = Rect2(0, 0, 32, 32)
 centered = false
 
-[node name=&quot;CollisionShape2D&quot; type=&quot;CollisionShape2D&quot; parent=&quot;.&quot;]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(14, 20)
-shape = SubResource(&quot;RectangleShape2D_abc&quot;)
+shape = SubResource("RectangleShape2D_abc")
 
-[node name=&quot;Camera2D&quot; type=&quot;Camera2D&quot; parent=&quot;.&quot;]
-script = SubResource(&quot;Camera2D_xyz&quot;)
+[node name="Camera2D" type="Camera2D" parent="."]
+script = SubResource("Camera2D_xyz")

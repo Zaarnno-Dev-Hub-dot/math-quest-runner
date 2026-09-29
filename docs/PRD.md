@@ -1,6 +1,6 @@
 # Math Quest Runner – Product Requirements Document (PRD)
 Version 2.1 – February 18, 2026
-Prepared for: Engineer hand-off
+Status: draft spec (not built yet)
 Target platforms: Web (HTML5), iOS, Android (Godot 4.x or Unity recommended)
 Backend: Supabase (Auth + Postgres + Realtime)
 Scope: MVP with login, 3 visually distinct levels per grade, leaderboard, and full analytics export
@@ -57,17 +57,14 @@ All levels use the exact same lush jungle foreground tileset (platforms, vines, 
 ### Level 1 – Sunny Clearing
 Bright open jungle, yellow sunlight rays, blue sky. Introduces double-jump early.
 (Easiest numbers, static platforms)
-[Embed original screenshot: uZ7SD - Sunny Clearing]
 
 ### Level 2 – Ancient Ruins
 Overgrown mossy stone temples, carved pillars, broken statues in background. Warm golden beams.
 (Medium difficulty, moving platforms)
-[Embed original screenshot: tEF3P - Ancient Ruins]
 
 ### Level 3 – Amazon River Canopy
 Platforms over misty river, waterfalls, lily pads, log bridges. Humid blue-green twilight + fireflies.
 (Hardest, crumbling platforms, word problems)
-[Embed original screenshot: wL381 - Amazon River Canopy]
 
 ### Per-Grade Math Topics (locked for whole session)
 - Grade 1: Addition & Subtraction

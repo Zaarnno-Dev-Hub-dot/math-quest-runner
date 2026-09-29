@@ -10,10 +10,5 @@ window/size/viewport_height=600
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 
-[input]
-ui_left = Key("a")
-ui_right = Key("d")
-jump = Key("space")
-
 [rendering]
 renderer/rendering_method="gl_compatibility"
